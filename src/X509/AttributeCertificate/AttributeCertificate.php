@@ -74,6 +74,14 @@ final class AttributeCertificate implements Stringable
                     ->oid() . ' of the acinfo.'
             );
         }
+        // RSASSA-PSS names its hash function, mask generation function and salt length in the parameters, which
+        // then have to match as well: the outer copy would otherwise decide them alone
+        if ($algo->oid() === AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION
+            && $algo->toASN1()->toDER() !== $acinfo->signature()->toASN1()->toDER()) {
+            throw new UnexpectedValueException(
+                'Signature algorithm parameters do not match the parameters of the acinfo.'
+            );
+        }
         $signature = Signature::fromSignatureData($seq->at(2)->asBitString()->string(), $algo);
         return self::create($acinfo, $algo, $signature);
     }

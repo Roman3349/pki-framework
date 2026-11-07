@@ -31,6 +31,9 @@ abstract class AlgorithmIdentifier implements AlgorithmIdentifierType
 
     final public const OID_RSASSA_PSS_ENCRYPTION = '1.2.840.113549.1.1.10';
 
+    // Mask generation function of RSASSA-PSS, from RFC 8017
+    final public const OID_MGF1 = '1.2.840.113549.1.1.8';
+
     final public const OID_SHA256_WITH_RSA_ENCRYPTION = '1.2.840.113549.1.1.11';
 
     final public const OID_SHA384_WITH_RSA_ENCRYPTION = '1.2.840.113549.1.1.12';

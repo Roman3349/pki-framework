@@ -109,6 +109,9 @@ final class PublicKeyInfo
             // RSA
             case AlgorithmIdentifier::OID_RSA_ENCRYPTION:
                 return RSAPublicKey::fromDER($this->publicKey->string());
+                // RSA key restricted to RSASSA-PSS, which keeps its restrictions
+            case AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION:
+                return RSAPublicKey::fromDER($this->publicKey->string())->withAlgorithmIdentifier($algo);
                 // Elliptic Curve
             case AlgorithmIdentifier::OID_EC_PUBLIC_KEY:
                 if (! $algo instanceof ECPublicKeyAlgorithmIdentifier) {

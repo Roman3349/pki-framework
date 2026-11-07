@@ -8,6 +8,7 @@ use Brick\Math\BigInteger;
 use function in_array;
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\AlgorithmIdentifier;
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Feature\SignatureAlgorithmIdentifier;
+use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Signature\RSASSAPSSAlgorithmIdentifier;
 use SpomkyLabs\Pki\CryptoTypes\Asymmetric\PublicKeyInfo;
 use SpomkyLabs\Pki\CryptoTypes\Asymmetric\RSA\RSAPublicKey;
 
@@ -28,11 +29,21 @@ final class SignaturePolicy
      * A signature is only as good as its digest. Without this check MD5 is accepted, against which chosen prefix
      * collisions are practical, and the application has no way to say no.
      *
+     * RSASSA-PSS names its hash function in its parameters, which an allow list of OID's cannot see. Over SHA-1 it
+     * is accepted only where sha1WithRSAEncryption is, so that a set refusing SHA-1 refuses it under PSS as well.
+     *
      * @param list<string>|string[] $allowed Accepted algorithm OID's
      */
     public static function isAlgorithmAllowed(SignatureAlgorithmIdentifier $algo, array $allowed): bool
     {
-        return in_array($algo->oid(), $allowed, true);
+        if (! in_array($algo->oid(), $allowed, true)) {
+            return false;
+        }
+        if ($algo instanceof RSASSAPSSAlgorithmIdentifier
+            && $algo->hashAlgorithm()->oid() === AlgorithmIdentifier::OID_SHA1) {
+            return in_array(AlgorithmIdentifier::OID_SHA1_WITH_RSA_ENCRYPTION, $allowed, true);
+        }
+        return true;
     }
 
     /**
@@ -49,7 +60,10 @@ final class SignaturePolicy
         if ($minimum === 0) {
             return null;
         }
-        if ($pubkey_info->algorithmIdentifier()->oid() !== AlgorithmIdentifier::OID_RSA_ENCRYPTION) {
+        $oid = $pubkey_info->algorithmIdentifier()
+            ->oid();
+        // a key restricted to RSASSA-PSS is an RSA key all the same
+        if ($oid !== AlgorithmIdentifier::OID_RSA_ENCRYPTION && $oid !== AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION) {
             return null;
         }
         $pubkey = $pubkey_info->publicKey();

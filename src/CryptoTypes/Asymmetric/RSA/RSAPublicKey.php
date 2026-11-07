@@ -13,6 +13,7 @@ use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Asymmetric\RSAEncryptionAlgor
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Feature\AlgorithmIdentifierType;
 use SpomkyLabs\Pki\CryptoTypes\Asymmetric\PublicKey;
 use SpomkyLabs\Pki\CryptoTypes\Asymmetric\PublicKeyInfo;
+use function sprintf;
 use UnexpectedValueException;
 
 /**
@@ -22,9 +23,14 @@ use UnexpectedValueException;
  */
 final class RSAPublicKey extends PublicKey
 {
+    /**
+     * @param null|AlgorithmIdentifierType $algorithm Algorithm of the SubjectPublicKeyInfo the key comes from, when
+     * it is not rsaEncryption
+     */
     private function __construct(
         private readonly string $modulus,
-        private readonly string $publicExponent
+        private readonly string $publicExponent,
+        private readonly ?AlgorithmIdentifierType $algorithm = null
     ) {
     }
 
@@ -65,12 +71,16 @@ final class RSAPublicKey extends PublicKey
                 return self::fromDER($pem->data());
             case PEM::TYPE_PUBLIC_KEY:
                 $pki = PublicKeyInfo::fromDER($pem->data());
-                if ($pki->algorithmIdentifier()
-                    ->oid() !==
-                    AlgorithmIdentifier::OID_RSA_ENCRYPTION) {
+                $oid = $pki->algorithmIdentifier()
+                    ->oid();
+                if ($oid !== AlgorithmIdentifier::OID_RSA_ENCRYPTION
+                    && $oid !== AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION) {
                     throw new UnexpectedValueException('Not an RSA public key.');
                 }
-                return self::fromDER($pki->publicKeyData()->string());
+                $key = self::fromDER($pki->publicKeyData()->string());
+                return $oid === AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION
+                    ? $key->withAlgorithmIdentifier($pki->algorithmIdentifier())
+                    : $key;
         }
         throw new UnexpectedValueException('Invalid PEM type ' . $pem->type());
     }
@@ -95,9 +105,27 @@ final class RSAPublicKey extends PublicKey
         return $this->publicExponent;
     }
 
+    /**
+     * Get a copy of the key with the algorithm identifier of its SubjectPublicKeyInfo.
+     *
+     * An RSA key restricted to RSASSA-PSS is identified by id-RSASSA-PSS, whose parameters restrict the signatures
+     * it may verify. The key keeps it, so that `publicKeyInfo()` gives back the restricted SubjectPublicKeyInfo.
+     * The PKCS #1 `RSA PUBLIC KEY` of `toPEM()` has no room for it.
+     *
+     * @see https://tools.ietf.org/html/rfc4055#section-1.2
+     */
+    public function withAlgorithmIdentifier(AlgorithmIdentifierType $algorithm): self
+    {
+        $oid = $algorithm->oid();
+        if ($oid !== AlgorithmIdentifier::OID_RSA_ENCRYPTION && $oid !== AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION) {
+            throw new UnexpectedValueException(sprintf('Algorithm %s is not an RSA key algorithm.', $algorithm->name()));
+        }
+        return new self($this->modulus, $this->publicExponent, $algorithm);
+    }
+
     public function algorithmIdentifier(): AlgorithmIdentifierType
     {
-        return RSAEncryptionAlgorithmIdentifier::create();
+        return $this->algorithm ?? RSAEncryptionAlgorithmIdentifier::create();
     }
 
     /**

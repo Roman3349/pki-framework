@@ -8,10 +8,12 @@ use SpomkyLabs\Pki\ASN1\Type\Constructed\Sequence;
 use SpomkyLabs\Pki\ASN1\Type\Primitive\Integer;
 use SpomkyLabs\Pki\ASN1\Type\UnspecifiedType;
 use SpomkyLabs\Pki\CryptoEncoding\PEM;
+use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\AlgorithmIdentifier;
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Asymmetric\RSAPSSSSAEncryptionAlgorithmIdentifier;
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Feature\AlgorithmIdentifierType;
 use SpomkyLabs\Pki\CryptoTypes\Asymmetric\PrivateKey;
 use SpomkyLabs\Pki\CryptoTypes\Asymmetric\PublicKey;
+use function sprintf;
 use UnexpectedValueException;
 
 /**
@@ -27,6 +29,7 @@ final class RSASSAPSSPrivateKey extends PrivateKey
      * @param string $exponent1 First factor exponent
      * @param string $exponent2 Second factor exponent
      * @param string $coefficient CRT coefficient of the second factor
+     * @param null|AlgorithmIdentifierType $algorithm Algorithm of the PrivateKeyInfo the key comes from
      */
     private function __construct(
         private readonly string $modulus,
@@ -36,7 +39,8 @@ final class RSASSAPSSPrivateKey extends PrivateKey
         private readonly string $prime2,
         private readonly string $exponent1,
         private readonly string $exponent2,
-        private readonly string $coefficient
+        private readonly string $coefficient,
+        private readonly ?AlgorithmIdentifierType $algorithm = null
     ) {
     }
 
@@ -179,9 +183,35 @@ final class RSASSAPSSPrivateKey extends PrivateKey
         return $this->coefficient;
     }
 
+    /**
+     * Get a copy of the key with the algorithm identifier of its PrivateKeyInfo.
+     *
+     * The parameters of id-RSASSA-PSS restrict the signatures the key may make. The key keeps them, so that
+     * `PrivateKeyInfo::fromPrivateKey()` and `publicKey()` do not lose them.
+     *
+     * @see https://tools.ietf.org/html/rfc4055#section-1.2
+     */
+    public function withAlgorithmIdentifier(AlgorithmIdentifierType $algorithm): self
+    {
+        if ($algorithm->oid() !== AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION) {
+            throw new UnexpectedValueException(sprintf('Algorithm %s is not RSASSA-PSS.', $algorithm->name()));
+        }
+        return new self(
+            $this->modulus,
+            $this->publicExponent,
+            $this->privateExponent,
+            $this->prime1,
+            $this->prime2,
+            $this->exponent1,
+            $this->exponent2,
+            $this->coefficient,
+            $algorithm
+        );
+    }
+
     public function algorithmIdentifier(): AlgorithmIdentifierType
     {
-        return RSAPSSSSAEncryptionAlgorithmIdentifier::create();
+        return $this->algorithm ?? RSAPSSSSAEncryptionAlgorithmIdentifier::create();
     }
 
     /**
@@ -189,7 +219,8 @@ final class RSASSAPSSPrivateKey extends PrivateKey
      */
     public function publicKey(): PublicKey
     {
-        return RSAPublicKey::create($this->modulus, $this->publicExponent);
+        $key = RSAPublicKey::create($this->modulus, $this->publicExponent);
+        return $this->algorithm === null ? $key : $key->withAlgorithmIdentifier($this->algorithm);
     }
 
     /**

@@ -37,6 +37,7 @@ use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Signature\ECDSAWithSHA512Algo
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Signature\MD2WithRSAEncryptionAlgorithmIdentifier;
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Signature\MD4WithRSAEncryptionAlgorithmIdentifier;
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Signature\MD5WithRSAEncryptionAlgorithmIdentifier;
+use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Signature\RSASSAPSSAlgorithmIdentifier;
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Signature\SHA1WithRSAEncryptionAlgorithmIdentifier;
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Signature\SHA224WithRSAEncryptionAlgorithmIdentifier;
 use SpomkyLabs\Pki\CryptoTypes\AlgorithmIdentifier\Signature\SHA256WithRSAEncryptionAlgorithmIdentifier;
@@ -90,6 +91,7 @@ final class AlgorithmIdentifierFactory
         AlgorithmIdentifier::OID_SHA256_WITH_RSA_ENCRYPTION => SHA256WithRSAEncryptionAlgorithmIdentifier::class,
         AlgorithmIdentifier::OID_SHA384_WITH_RSA_ENCRYPTION => SHA384WithRSAEncryptionAlgorithmIdentifier::class,
         AlgorithmIdentifier::OID_SHA512_WITH_RSA_ENCRYPTION => SHA512WithRSAEncryptionAlgorithmIdentifier::class,
+        AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION => RSASSAPSSAlgorithmIdentifier::class,
         AlgorithmIdentifier::OID_ECDSA_WITH_SHA1 => ECDSAWithSHA1AlgorithmIdentifier::class,
         AlgorithmIdentifier::OID_ECDSA_WITH_SHA224 => ECDSAWithSHA224AlgorithmIdentifier::class,
         AlgorithmIdentifier::OID_ECDSA_WITH_SHA256 => ECDSAWithSHA256AlgorithmIdentifier::class,

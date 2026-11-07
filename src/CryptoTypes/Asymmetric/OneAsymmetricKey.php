@@ -186,7 +186,8 @@ class OneAsymmetricKey
                 return RSAPrivateKey::fromDER($this->privateKeyData);
                 // RSASSA-PSS
             case AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION:
-                return RSASSAPSSPrivateKey::fromDER($this->privateKeyData);
+                // the parameters restrict the signatures the key may make
+                return RSASSAPSSPrivateKey::fromDER($this->privateKeyData)->withAlgorithmIdentifier($algo);
                 // elliptic curve
             case AlgorithmIdentifier::OID_EC_PUBLIC_KEY:
                 $pk = ECPrivateKey::fromDER($this->privateKeyData);

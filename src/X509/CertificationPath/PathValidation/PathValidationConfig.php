@@ -30,10 +30,10 @@ final class PathValidationConfig
      * enterprise and device PKIs continue to rely on it, and cutting them off silently is not this library's
      * call to make. Use HARDENED_ALLOWED_SIGNATURE_ALGORITHMS to refuse it.
      *
-     * RSASSA-PSS is left out because it is not implemented: a PSS signed certificate is refused when it is
-     * parsed, so allowing the OID here advertised a capability that does not exist. When PSS is implemented the
-     * parameters have to be bound as well as the OID, since Certificate::fromASN1() only compares the OID of the
-     * outer and the signed algorithm identifiers, which would leave a hash, MGF and salt length downgrade open.
+     * RSASSA-PSS names its hash function in its parameters, which its OID does not tell. A PSS signature over
+     * SHA-1 is therefore accepted only where sha1WithRSAEncryption is, so that the hardened set refuses it too.
+     * Certificate::fromASN1() refuses a certificate whose outer and signed PSS parameters differ, so the
+     * parameters the signature is checked with are the signed ones.
      *
      * Whether Ed25519 and Ed448 can actually be checked depends on the runtime: the OpenSSL extension only grew
      * EdDSA recently, and ext-sodium covers Ed25519 alone. Validation fails closed where it cannot, and
@@ -48,6 +48,7 @@ final class PathValidationConfig
         AlgorithmIdentifier::OID_SHA256_WITH_RSA_ENCRYPTION,
         AlgorithmIdentifier::OID_SHA384_WITH_RSA_ENCRYPTION,
         AlgorithmIdentifier::OID_SHA512_WITH_RSA_ENCRYPTION,
+        AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION,
         AlgorithmIdentifier::OID_ECDSA_WITH_SHA1,
         AlgorithmIdentifier::OID_ECDSA_WITH_SHA224,
         AlgorithmIdentifier::OID_ECDSA_WITH_SHA256,
@@ -70,6 +71,7 @@ final class PathValidationConfig
         AlgorithmIdentifier::OID_SHA256_WITH_RSA_ENCRYPTION,
         AlgorithmIdentifier::OID_SHA384_WITH_RSA_ENCRYPTION,
         AlgorithmIdentifier::OID_SHA512_WITH_RSA_ENCRYPTION,
+        AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION,
         AlgorithmIdentifier::OID_ECDSA_WITH_SHA224,
         AlgorithmIdentifier::OID_ECDSA_WITH_SHA256,
         AlgorithmIdentifier::OID_ECDSA_WITH_SHA384,

@@ -132,14 +132,13 @@ final class EdDSASignatureTest extends TestCase
     }
 
     #[Test]
-    public function rsassaPssIsNoLongerAdvertisedWhileItIsNotImplemented(): void
+    public function rsassaPssIsAdvertisedNowThatItIsImplemented(): void
     {
-        // A PSS signed certificate is refused when it is parsed, so the entry was dead configuration.
-        static::assertNotContains(
+        static::assertContains(
             AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION,
             PathValidationConfig::DEFAULT_ALLOWED_SIGNATURE_ALGORITHMS
         );
-        static::assertNotContains(
+        static::assertContains(
             AlgorithmIdentifier::OID_RSASSA_PSS_ENCRYPTION,
             PathValidationConfig::HARDENED_ALLOWED_SIGNATURE_ALGORITHMS
         );
